@@ -31,3 +31,21 @@ body{
 .formulario input:hover {
     border-bottom-color: rgb(88, 24, 24);
 }
+
+button{
+    padding: 5px 10px;
+    margin-top: 5px;
+    width: 100%;
+    border: none;
+    outline:none;
+    background-color: rgb(117, 59, 59);
+    color: white;
+    height: 25px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+button:hover{
+    cursor: pointer;
+    background-color: rgb(122, 44, 44);
+}

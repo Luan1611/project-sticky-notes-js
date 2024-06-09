@@ -25,16 +25,20 @@
 
         </div>
 
-        <div class="lembretes">
+        <div class="inputLembretes">
 
-            <form id = "sticknotes" class="formulario">
+            <div class="container-lembretes">
 
-                <input id= "tituloNota" type="text" name="titulo" placeholder="titulo da nota" required>
 
-                <input id = "descricaoNota" type="text" name="descricao" placeholder="descricao" required>
-    
-                <button id = "enviar">SALVAR NOTA</button>
 
+            </div>
+
+
+            <form id="sticknotes" class="formulario">
+                <textarea name="message" wrap="physical" cols="50" rows="6" onkeydown="textCounter(this.form.message,this.form.remLen,256);" onkeyup="textCounter(this.form.message,this.form.remLen,256);" placeholder="Digite sua nota aqui"></textarea>
+                <br>
+                <input readonly="" type="text" name="remLen" size="3" maxlength="3" value="256" class = "numberInput">
+                <button id="inputLembrete">Salvar Lembrete</button>
             </form>
 
         </div>

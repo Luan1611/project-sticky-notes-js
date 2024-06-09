@@ -16,7 +16,6 @@ body{
     border-radius: 15px;
 }
 
-
 .formulario input {
     width: 100%;
     border: none;
@@ -48,4 +47,11 @@ button{
 button:hover{
     cursor: pointer;
     background-color: rgb(122, 44, 44);
+}
+
+.numberInput {
+    border: thin;
+    border-style: solid;
+    border-color: #ccc;
+    border-radius: 5px;
 }

@@ -1,11 +1,13 @@
 function checarLogin() {
-    const loginDiv = document.querySelector(".inputLogin")
+
+    const loginDiv = document.querySelector(".inputLogin");
     const sticknotesDiv = document.querySelector(".inputLembretes");
     const login = localStorage.getItem("tokenJWT");
 
     if(login) {
         loginDiv.style.display = "none";
         sticknotesDiv.style.display = "block";
+        carregarDadosLembretes();
     } else{
         loginDiv.style.display = "block";
         sticknotesDiv.style.display = "none";
@@ -79,19 +81,28 @@ async function cadastrar(e) {
 
 //funções de lembretes
 
-async function carregarDadosLembretes(e) {
+async function carregarDadosLembretes() {
 
-    e.preventDefault();
+    const tokenJWT = localStorage.getItem("tokenJWT");
 
-    const resposta = await fetch(urlBase + "/lembrete");
+    let options = {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${tokenJWT}`
+        }
+    }
+
+    const resposta = await fetch(urlBase + "/lembrete", options);
     const listaDeLembretes = await resposta.json();
 
     let divPai = document.querySelector(".container-lembretes");
 
+    console.log(listaDeLembretes);
+
     for (lembrete of listaDeLembretes) {
 
         let divDoLembrete = document.createElement("div");
-        divFilha.classList.add("lembrete");
+        divDoLembrete.classList.add("lembrete");
 
         let dataLembrete = document.createElement("h4");
         dataLembrete.innerHTML = lembrete.data;
@@ -101,10 +112,12 @@ async function carregarDadosLembretes(e) {
 
         let botaoAlterarLembrete = document.createElement("button");
         botaoAlterarLembrete.innerText = "Editar";
+        botaoAlterarLembrete.id = lembrete.id;
         botaoAlterarLembrete.addEventListener("click", editarLembrete);
 
         let botaoRemoverLembrete = document.createElement("button");
         botaoRemoverLembrete.innerText = "Remover";
+        botaoRemoverLembrete.id = lembrete.id;
         botaoRemoverLembrete.addEventListener("click", removerLembrete);
 
         divDoLembrete.append(dataLembrete);
@@ -140,9 +153,7 @@ async function salvarLembrete(e) {
     }
 
     let resposta = await fetch(urlBase + "/lembrete", options);
-    console.log(resposta)
     let lembrete = await resposta.json();
-    console.log(lembrete);
 
     let divPai = document.querySelector(".container-lembretes");
 
@@ -157,10 +168,12 @@ async function salvarLembrete(e) {
 
     let botaoAlterarLembrete = document.createElement("button");
     botaoAlterarLembrete.innerText = "Editar";
+    botaoAlterarLembrete.id = lembrete.id;
     botaoAlterarLembrete.addEventListener("click", editarLembrete);
 
     let botaoRemoverLembrete = document.createElement("button");
     botaoRemoverLembrete.innerText = "Remover";
+    botaoRemoverLembrete.id = lembrete.id;
     botaoRemoverLembrete.addEventListener("click", removerLembrete);
 
     divDoLembrete.append(dataLembrete);
@@ -178,15 +191,53 @@ field.value = field.value.substring(0, maxlimit);
 else 
 countfield.value = maxlimit - field.value.length;
 }
+
+
 function editarLembrete() {
+
+    const tokenJWT = localStorage.getItem("tokenJWT");
+
+    let options = {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${tokenJWT}`
+        }
+    }
     console.log("editar")
 }
 
-function removerLembrete() {
-    console.log("remover")
+
+async function removerLembrete(e) {
+
+    renovarToken();
+
+    const tokenJWT = localStorage.getItem("tokenJWT");
+
+    let options = {
+        method: "DELETE",
+        headers: {
+            "Authorization": `Bearer ${tokenJWT}`
+        }
+    }
+
+    let botaoRemoverLembrete = e.target;
+    console.log(botaoRemoverLembrete);
+    let idLembrete = botaoRemoverLembrete.id;
+    console.log(idLembrete);
+
+    const respServer = await fetch(`${urlBase}/lembrete/${idLembrete}`, options);
+    const respJson = await respServer.json();
+
+    alert(respJson.msg);
+
+    let lembreteASerRemovido = botaoRemoverLembrete.parentElement;
+    lembreteASerRemovido.remove();
+
 }
 
+
 async function renovarToken() {
+
     const tokenJWT = localStorage.getItem("tokenJWT");
 
     let options = {
@@ -196,21 +247,18 @@ async function renovarToken() {
         }
     }
 
-    const respServer = await fetch(urlBase + "/usuario/renew", options);
-    console.log(respServer);
+    const respServer = await fetch(`${urlBase}/usuario/renew`, options);
+
     const respJson = await respServer.json();
-    console.log(respJson);
-    console.log(typeof respJson);
 
     localStorage.removeItem("tokenJWT");
 
     localStorage.setItem("tokenJWT", respJson.token);
-    console.log(typeof respJson.token);
-    console.log(localStorage.getItem("tokenJWT"));
 
 }
 
 async function verificarSeEstaLogado() {
+
     const tokenJWT = localStorage.getItem("tokenJWT");
 
     let options = {
@@ -222,7 +270,8 @@ async function verificarSeEstaLogado() {
 
     const respServer = await fetch(urlBase + "/usuario/check", options);
     const respJson = await respServer.json();
-    alert(respJson.msg);
+
+    return (respJson.msg === "Você está logado"? false : true);
 
 }
 
@@ -239,6 +288,7 @@ botaoCadastro.addEventListener("click", cadastrar);
 
 const inputAdicionarLembrete = document.querySelector("#inputLembrete");
 inputAdicionarLembrete.addEventListener("click", salvarLembrete);
+
 
 
 

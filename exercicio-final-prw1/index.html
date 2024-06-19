@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Sistema de Lembretes</title>
     <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
 
         <div class="inputLogin">
 
-            <h1>Lembre-se!</h1>
+            <h1>Sistema de lembretes</h1>
 
             <form id = "login" class="formulario">
 
@@ -29,16 +29,22 @@
 
             <div class="container-lembretes">
 
-
-
             </div>
 
 
             <form id="sticknotes" class="formulario">
-                <textarea name="message" wrap="physical" cols="50" rows="6" onkeydown="textCounter(this.form.message,this.form.remLen,256);" onkeyup="textCounter(this.form.message,this.form.remLen,256);" placeholder="Digite sua nota aqui"></textarea>
-                <br>
-                <input readonly="" type="text" name="remLen" size="3" maxlength="3" value="256" class = "numberInput">
+
+                <textarea name="message" wrap="physical" cols="55" rows="5" onkeydown="textCounter(this.form.message,this.form.remLen,255);" onkeyup="textCounter(this.form.message,this.form.remLen,255);" placeholder="Digite sua nota aqui"></textarea><br>
+
+                <p>Caracteres restantes:<input readonly="" type="text" name="remLen" size="3" maxlength="3" value="255" class = "numberInput"></p>
+                
+
                 <button id="inputLembrete">Salvar Lembrete</button>
+                <br>
+                <br>
+                <br>
+                <button id="fazerLogout">SAIR</button>
+                
             </form>
 
         </div>

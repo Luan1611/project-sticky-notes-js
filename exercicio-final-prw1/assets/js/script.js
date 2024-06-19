@@ -1,10 +1,27 @@
-function checarLogin() {
+
+const urlBase = "https://ifsp.ddns.net/webservices/lembretes";
+var cronometro;
+var msgLoginExpirado;
+var logout;
+
+
+// Funções que tratam da parte do usuário
+
+async function checarLogin() {
 
     const loginDiv = document.querySelector(".inputLogin");
     const sticknotesDiv = document.querySelector(".inputLembretes");
-    const login = localStorage.getItem("tokenJWT");
 
-    if(login) {
+    const token = localStorage.getItem("tokenJWT");
+
+    //verifica se token é valido, inexistente ou inválido
+    const booleanResponse = await checarSeTokenAindaTemValidade(token);
+
+    if(booleanResponse) {
+        cronometro = setTimeout(checarLogin, 180000);
+        alertarQueLoginExpirou();
+        fazerLogout();
+
         loginDiv.style.display = "none";
         sticknotesDiv.style.display = "block";
         carregarDadosLembretes();
@@ -12,7 +29,99 @@ function checarLogin() {
         loginDiv.style.display = "block";
         sticknotesDiv.style.display = "none";
     }
+
 }
+
+
+function fazerLogout() {
+
+    setTimeout(() => {
+            let token = localStorage.getItem("tokenJWT"); 
+            fazerServidorRevogarToken(token);
+    }, 179999);
+
+}
+
+
+async function fazerServidorRevogarToken(token) {
+    
+    let opcoes = {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    }
+
+    let serverResponse = await fetch(urlBase + "/usuarios/logout", opcoes);
+    let obj = serverResponse.json();
+
+    console.log(obj.msg);
+
+    localStorage.clear();
+
+}
+
+
+function alertarQueLoginExpirou() {
+
+    setTimeout( () => {
+        alert("Seu tempo de login expirou!");
+    }, 179999);
+
+}
+
+
+function parseJWT(token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+}
+
+
+async function checarSeTokenAindaTemValidade(token) {
+
+    if (token !== null) {
+    
+        try {
+
+            let opcoes = {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+
+            //arrumar problema da linha abaixo
+            let respostaServidor = await fetch(urlBase + "/usuario/check", opcoes);
+            console.log(respostaServidor.status);
+            console.log(respostaServidor.ok);
+            console.log(respostaServidor);
+
+            let mensagemRetornada = await respostaServidor.json();
+
+            if (mensagemRetornada.msg === "Você não está logado") {
+                return false;
+            }
+        
+            return true;
+        }
+
+        catch {
+            (err) => {
+                console.log(err);
+            }
+        }
+
+    }
+
+    return false;
+
+}
+
 
 async function logar(e) {
 
@@ -35,8 +144,9 @@ async function logar(e) {
 
     let resposta = await fetch(urlBase + "/usuario/login", options);
     let valorToken = await resposta.json();
-
+    console.log(parseJWT(valorToken.token));
     console.log(valorToken);
+
     if (valorToken.token) {
         localStorage.setItem("tokenJWT", valorToken.token);
         verificarSeEstaLogado();
@@ -46,6 +156,7 @@ async function logar(e) {
     }
 
 }
+
 
 async function cadastrar(e) {
 
@@ -79,7 +190,55 @@ async function cadastrar(e) {
 }
 
 
-//funções de lembretes
+async function renovarToken() {
+
+    const tokenJWT = localStorage.getItem("tokenJWT");
+
+    let options = {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${tokenJWT}`
+        }
+    }
+
+    const respServer = await fetch(`${urlBase}/usuario/renew`, options);
+
+    const respJson = await respServer.json();
+
+    localStorage.removeItem("tokenJWT");
+
+    localStorage.setItem("tokenJWT", respJson.token);
+
+    clearTimeout(cronometro);
+
+    cronometro = setTimeout(checarLogin, 180000);
+    alertarQueLoginExpirou();
+
+}
+
+
+async function verificarSeEstaLogado() {
+
+    const tokenJWT = localStorage.getItem("tokenJWT");
+
+    let options = {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${tokenJWT}`
+        }
+    }
+
+    const respServer = await fetch(urlBase + "/usuario/check", options);
+    const respJson = await respServer.json();
+
+    return (respJson.msg === "Você está logado"? false : true);
+
+}
+
+
+
+
+//Funções que tratam da parte dos Lembretes
 
 async function carregarDadosLembretes() {
 
@@ -131,6 +290,7 @@ async function carregarDadosLembretes() {
 
 }
 
+
 async function salvarLembrete(e) {
 
     renovarToken();
@@ -138,6 +298,7 @@ async function salvarLembrete(e) {
     const tokenJWT = localStorage.getItem("tokenJWT");
 
     e.preventDefault();
+
     let botaoSalvarLembrete = e.target;
     let valorTextArea = botaoSalvarLembrete.parentElement.children[0].value;
 
@@ -185,14 +346,8 @@ async function salvarLembrete(e) {
 
 }
 
-function textCounter(field, countfield, maxlimit) {
-if (field.value.length > maxlimit)
-field.value = field.value.substring(0, maxlimit);
-else 
-countfield.value = maxlimit - field.value.length;
-}
 
-
+//TODO: Terminar função de editar um lembrete
 function editarLembrete() {
 
     const tokenJWT = localStorage.getItem("tokenJWT");
@@ -209,8 +364,6 @@ function editarLembrete() {
 
 async function removerLembrete(e) {
 
-    renovarToken();
-
     const tokenJWT = localStorage.getItem("tokenJWT");
 
     let options = {
@@ -221,9 +374,7 @@ async function removerLembrete(e) {
     }
 
     let botaoRemoverLembrete = e.target;
-    console.log(botaoRemoverLembrete);
     let idLembrete = botaoRemoverLembrete.id;
-    console.log(idLembrete);
 
     const respServer = await fetch(`${urlBase}/lembrete/${idLembrete}`, options);
     const respJson = await respServer.json();
@@ -233,50 +384,20 @@ async function removerLembrete(e) {
     let lembreteASerRemovido = botaoRemoverLembrete.parentElement;
     lembreteASerRemovido.remove();
 
-}
-
-
-async function renovarToken() {
-
-    const tokenJWT = localStorage.getItem("tokenJWT");
-
-    let options = {
-        method: "GET",
-        headers: {
-            "Authorization": `Bearer ${tokenJWT}`
-        }
-    }
-
-    const respServer = await fetch(`${urlBase}/usuario/renew`, options);
-
-    const respJson = await respServer.json();
-
-    localStorage.removeItem("tokenJWT");
-
-    localStorage.setItem("tokenJWT", respJson.token);
-
-}
-
-async function verificarSeEstaLogado() {
-
-    const tokenJWT = localStorage.getItem("tokenJWT");
-
-    let options = {
-        method: "GET",
-        headers: {
-            "Authorization": `Bearer ${tokenJWT}`
-        }
-    }
-
-    const respServer = await fetch(urlBase + "/usuario/check", options);
-    const respJson = await respServer.json();
-
-    return (respJson.msg === "Você está logado"? false : true);
+    renovarToken();
 
 }
 
 
-const urlBase = "https://ifsp.ddns.net/webservices/lembretes";
+function textCounter(field, countfield, maxlimit) {
+
+    if (field.value.length > maxlimit)
+    field.value = field.value.substring(0, maxlimit);
+    else 
+    countfield.value = maxlimit - field.value.length;
+    
+}
+
 
 checarLogin();
 
@@ -289,9 +410,8 @@ botaoCadastro.addEventListener("click", cadastrar);
 const inputAdicionarLembrete = document.querySelector("#inputLembrete");
 inputAdicionarLembrete.addEventListener("click", salvarLembrete);
 
-
-
-
+const botaoFazerLogout = document.querySelector("#fazerLogout");
+botaoFazerLogout.addEventListener("click", fazerServidorRevogarToken);
 
 
 /*    

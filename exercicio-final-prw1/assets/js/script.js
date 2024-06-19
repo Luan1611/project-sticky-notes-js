@@ -95,7 +95,6 @@ async function checarSeTokenAindaTemValidade(token) {
                 }
             }
 
-            //arrumar problema da linha abaixo
             let respostaServidor = await fetch(urlBase + "/usuario/check", opcoes);
             console.log(respostaServidor.status);
             console.log(respostaServidor.ok);

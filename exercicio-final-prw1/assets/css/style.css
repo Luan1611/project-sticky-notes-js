@@ -3,7 +3,7 @@
     font-family: Arial, Helvetica, sans-serif;
 }
 
-body{
+body {
     background-color: antiquewhite;
 }
 
@@ -31,7 +31,7 @@ body{
     border-bottom-color: rgb(88, 24, 24);
 }
 
-button{
+button {
     padding: 5px 10px;
     margin-top: 5px;
     width: 100%;
@@ -44,7 +44,7 @@ button{
     text-align: center;
 }
 
-button:hover{
+button:hover {
     cursor: pointer;
     background-color: rgb(122, 44, 44);
 }
@@ -59,8 +59,21 @@ button:hover{
 textarea {
     width: 400px;
     height: 85px;
+    resize: none;
 }
 
 .mainTextArea {
     margin-top: 50px;
+}
+
+.container-lembretes {
+    text-align: center;
+}
+
+form {
+    text-align: center;
+}
+
+h1 {
+    text-align: center;
 }

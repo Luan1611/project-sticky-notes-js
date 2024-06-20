@@ -223,6 +223,7 @@ async function renovarToken() {
     clearTimeout(cronometro);
 
     cronometro = setTimeout(checarLogin, 180000);
+    
     alertarQueLoginExpirou();
 
 }
@@ -253,7 +254,7 @@ async function verificarSeEstaLogado() {
 
 async function carregarDadosLembretes() {
 
-    let moldeTextArea = `<textarea name="message" wrap="physical" cols="55" rows="5" onkeydown="textCounter(this.form.message,this.form.remLen,255);" onkeyup="textCounter(this.form.message,this.form.remLen,255);"></textarea>`
+    /* let moldeTextArea = `<textarea name="message" wrap="physical" cols="55" rows="5" onkeydown="textCounter(this.form.message,this.form.remLen,255);" onkeyup="textCounter(this.form.message,this.form.remLen,255);"></textarea>` */
 
     const tokenJWT = localStorage.getItem("tokenJWT");
 
@@ -279,12 +280,18 @@ async function carregarDadosLembretes() {
         let dataLembrete = document.createElement("h4");
         dataLembrete.innerHTML = lembrete.data;
 
-        let conteudoLembrete = document.createElement("textarea");
-        conteudoLembrete.innerHTML = moldeTextArea;
-        conteudoLembrete.setAttribute('disabled', true);
-        conteudoLembrete.innerText = lembrete.texto;
-        
+        let texAreaDoLembrete = document.createElement("textarea");
 
+        //coloquei as 3 linhas abaixo
+        texAreaDoLembrete.setAttribute('cols', 90);
+        texAreaDoLembrete.setAttribute('rows', 5);
+        texAreaDoLembrete.setAttribute('disabled', true);
+        
+        //Errado, não?
+        //conteudoLembrete.innerHTML = moldeTextArea;
+        //conteudoLembrete.setAttribute('disabled', true);
+        texAreaDoLembrete.innerText = lembrete.texto;
+        
         let botaoAlterarLembrete = document.createElement("button");
         botaoAlterarLembrete.innerText = "Editar";
         botaoAlterarLembrete.id = lembrete.id;
@@ -296,7 +303,7 @@ async function carregarDadosLembretes() {
         botaoRemoverLembrete.addEventListener("click", removerLembrete);
 
         divDoLembrete.append(dataLembrete);
-        divDoLembrete.append(conteudoLembrete);
+        divDoLembrete.append(texAreaDoLembrete);
         divDoLembrete.append(botaoAlterarLembrete);
         divDoLembrete.append(botaoRemoverLembrete);
 
@@ -309,66 +316,80 @@ async function carregarDadosLembretes() {
 
 async function salvarLembrete(e) {
 
-    renovarToken();
-
-    const tokenJWT = localStorage.getItem("tokenJWT");
-
     e.preventDefault();
 
+    const tokenJWT = localStorage.getItem("tokenJWT");
+    
     let botaoSalvarLembrete = e.target;
     let textArea = botaoSalvarLembrete.parentElement.children[0];
     let valueTextArea = textArea.value;
+    let tamanhoDaStringDoTextArea = valueTextArea.length;
+    console.log(tamanhoDaStringDoTextArea);
+    //console.log(valueTextArea);
 
-    let options = {
-        method: "POST",
-        body: JSON.stringify({
-            texto: valueTextArea
-        }),
-        headers: {
-            "Content-type": "application/json",
-            "Authorization": `Bearer ${tokenJWT}`
+    if (tamanhoDaStringDoTextArea > 0 && tamanhoDaStringDoTextArea <= 255) {
+
+        let options = {
+            method: "POST",
+            body: JSON.stringify({
+                texto: valueTextArea
+            }),
+            headers: {
+                "Content-type": "application/json",
+                "Authorization": `Bearer ${tokenJWT}`
+            }
         }
+    
+        let resposta = await fetch(urlBase + "/lembrete", options);
+        //console.log(resposta.ok);
+        let lembrete = await resposta.json();
+        //console.log(lembrete);
+    
+        let divPai = document.querySelector(".container-lembretes");
+    
+        let divDoLembrete = document.createElement("div");
+        divDoLembrete.classList.add("lembrete");
+    
+        let dataLembrete = document.createElement("h4");
+        dataLembrete.innerHTML = lembrete.data;
+    
+        let textAreaDoLembrete = document.createElement("textarea");
+        textAreaDoLembrete.setAttribute('disabled', true);
+        textAreaDoLembrete.setAttribute('cols', 90);
+        textAreaDoLembrete.setAttribute('rows', 5);
+        //linha abaixo alterada para correção
+        textAreaDoLembrete.innerHTML = lembrete.texto;
+        console.log(textAreaDoLembrete);
+    
+        let botaoAlterarLembrete = document.createElement("button");
+        botaoAlterarLembrete.innerText = "Editar";
+        botaoAlterarLembrete.id = lembrete.id;
+        botaoAlterarLembrete.addEventListener("click", editarLembrete);
+    
+        let botaoRemoverLembrete = document.createElement("button");
+        botaoRemoverLembrete.innerText = "Remover";
+        botaoRemoverLembrete.id = lembrete.id;
+        botaoRemoverLembrete.addEventListener("click", removerLembrete);
+    
+        divDoLembrete.append(dataLembrete);
+        divDoLembrete.append(textAreaDoLembrete);
+        divDoLembrete.append(botaoAlterarLembrete);
+        divDoLembrete.append(botaoRemoverLembrete);
+    
+        divPai.append(divDoLembrete);
+    
+        textArea.value = "";
+    
+        renovarToken();
     }
 
-    let resposta = await fetch(urlBase + "/lembrete", options);
-    let lembrete = await resposta.json();
-
-    let divPai = document.querySelector(".container-lembretes");
-
-    let divDoLembrete = document.createElement("div");
-    divDoLembrete.classList.add("lembrete");
-
-    let dataLembrete = document.createElement("h4");
-    dataLembrete.innerHTML = lembrete.data;
-
-/*     let conteudoLembrete = document.createElement("p");
-    conteudoLembrete.innerHTML = lembrete.texto; */
-
-    let conteudoLembrete = document.createElement("textarea");
-    conteudoLembrete = textArea;
-    conteudoLembrete.setAttribute('disabled', true);
-
-    let botaoAlterarLembrete = document.createElement("button");
-    botaoAlterarLembrete.innerText = "Editar";
-    botaoAlterarLembrete.id = lembrete.id;
-    botaoAlterarLembrete.addEventListener("click", editarLembrete);
-
-    let botaoRemoverLembrete = document.createElement("button");
-    botaoRemoverLembrete.innerText = "Remover";
-    botaoRemoverLembrete.id = lembrete.id;
-    botaoRemoverLembrete.addEventListener("click", removerLembrete);
-
-    divDoLembrete.append(dataLembrete);
-    divDoLembrete.append(conteudoLembrete);
-    divDoLembrete.append(botaoAlterarLembrete);
-    divDoLembrete.append(botaoRemoverLembrete);
-
-    divPai.append(divDoLembrete);
+    else {
+        alert("Erro. Não é permitido salvar um lembrete vazio, nem um lembrete com mais de 255 caracteres.");
+    }
 
 }
 
 
-//TODO: Terminar função de editar um lembrete
 async function editarLembrete(e) {
 
     let botaoEditarLembrete = e.target;
@@ -376,11 +397,11 @@ async function editarLembrete(e) {
     if (!(botaoEditarLembrete.previousElementSibling.getAttribute("class") === "salvarEdicao")) {
 
         let botaoSalvarEdicao = document.createElement("button");
-        botaoSalvarEdicao.innerText = "Salvar Alterações";
+        botaoSalvarEdicao.innerText = "Salvar Alteracoes";
         botaoSalvarEdicao.setAttribute("class", "salvarEdicao");
         botaoSalvarEdicao.setAttribute("id", botaoEditarLembrete.getAttribute("id"));
         botaoEditarLembrete.insertAdjacentElement("beforebegin", botaoSalvarEdicao);
-        botaoSalvarEdicao.addEventListener("click", provisoria);
+        botaoSalvarEdicao.addEventListener("click", salvarEdicaoDoLembrete);
 
     }
 
@@ -389,12 +410,11 @@ async function editarLembrete(e) {
     let idLembrete = botaoEditarLembrete.id;
     let textoDoLembreteASerEditado = botaoEditarLembrete.previousElementSibling.previousElementSibling;
     textoDoLembreteASerEditado.removeAttribute("disabled");
-    
-
 
 }
 
-async function provisoria(e) {
+
+async function salvarEdicaoDoLembrete(e) {
 
     e.preventDefault();
 
@@ -452,15 +472,14 @@ async function removerLembrete(e) {
 }
 
 
-function textCounter(field, countfield, maxlimit) {
+/* function textCounter(field, countfield, maxlimit) {
 
     if (field.value.length > maxlimit)
     field.value = field.value.substring(0, maxlimit);
     else 
     countfield.value = maxlimit - field.value.length;
     
-}
-
+} */
 
 checarLogin();
 
@@ -470,8 +489,8 @@ botaoLogin.addEventListener("click", logar);
 const botaoCadastro = document.querySelector("#fazerCadastro");
 botaoCadastro.addEventListener("click", cadastrar);
 
-const inputAdicionarLembrete = document.querySelector("#inputLembrete");
-inputAdicionarLembrete.addEventListener("click", salvarLembrete);
+const botaoSalvarNovoLembreve = document.querySelector("#inputLembrete");
+botaoSalvarNovoLembreve.addEventListener("click", salvarLembrete);
 
 const botaoFazerLogout = document.querySelector("#fazerLogout");
 botaoFazerLogout.addEventListener("click", fazerLogout);

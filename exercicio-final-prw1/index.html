@@ -1,56 +1,60 @@
 <!DOCTYPE html>
+
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Lembretes</title>
-    <link rel="stylesheet" href="./assets/css/style.css">
-</head>
-<body>
-    <div class="content-center">
 
-        <div class="inputLogin">
+    <head>
 
-            <h1>Sistema de lembretes</h1>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sistema de Lembretes</title>
+        <link rel="stylesheet" href="./assets/css/style.css">
 
-            <form id = "login" class="formulario">
+    </head>
 
-                <input id="email" type="text" name="login" placeholder="E-mail" required>
+    <body>
 
-                <input id ="senha" type="password" name="senha" placeholder="Senha" required>
-    
-                <button id ="fazerLogin">LOGIN</button>
-                <button id ="fazerCadastro">CADASTRAR</button>
-            </form>
+        <div class="content-center">
 
-        </div>
+            <div class="inputLogin">
 
-        <div class="inputLembretes">
+                <h1>Sistema de lembretes</h1>
 
-            <div class="container-lembretes">
+                <form id = "login" class="formulario">
+
+                    <input id="email" type="text" name="login" placeholder="E-mail" required>
+
+                    <input id ="senha" type="password" name="senha" placeholder="Senha" required>
+        
+                    <button id ="fazerLogin">LOGIN</button>
+                    <button id ="fazerCadastro">CADASTRAR</button>
+
+                </form>
 
             </div>
 
+            <div class="inputLembretes">
 
-            <form id="sticknotes" class="formulario">
+                <div class="container-lembretes">
 
-                <textarea class="mainTextArea" name="message" wrap="physical" cols="55" rows="5" onkeydown="textCounter(this.form.message,this.form.remLen,255);" onkeyup="textCounter(this.form.message,this.form.remLen,255);" placeholder="Digite sua nota aqui"></textarea><br>
+                </div>
 
-                <p>Caracteres restantes:<input readonly="" type="text" name="remLen" size="3" maxlength="3" value="255" class = "numberInput"></p>
-                
+                <form id="sticknotes" class="formulario">
 
-                <button id="inputLembrete">Salvar Lembrete</button>
-                <br>
-                <br>
-                <br>
+                    <textarea class="mainTextArea" cols="90" rows="5" maxlength="255" placeholder="Digite sua nota aqui" required></textarea>
+
+                    <button id="inputLembrete">Salvar Novo Lembrete</button>
+                    
+                </form>
+
+                <!-- retirei o botao abaixo de dentro do form -->
                 <button id="fazerLogout">SAIR</button>
-                
-            </form>
+
+            </div>
 
         </div>
 
-    </div>
+        <script src="./assets/js/session.js"></script>
+        
+    </body>
 
-    <script src="./assets/js/script.js"></script>
-</body>
 </html>

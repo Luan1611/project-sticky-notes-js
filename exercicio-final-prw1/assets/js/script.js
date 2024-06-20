@@ -1,9 +1,10 @@
 
+// Trabalho desenvolvido por Luan Marqueti e Luana Giovana Monteiro
+
 const urlBase = "https://ifsp.ddns.net/webservices/lembretes";
 var cronometro;
 var msgLoginExpirado;
 var logout;
-
 
 // Funções que tratam da parte do usuário
 
@@ -12,13 +13,18 @@ async function checarLogin() {
     const loginDiv = document.querySelector(".inputLogin");
     const sticknotesDiv = document.querySelector(".inputLembretes");
 
-    const token = localStorage.getItem("tokenJWT");
+    const tokenJWT = localStorage.getItem("tokenJWT");
 
     //verifica se token é valido, inexistente ou inválido
-    const booleanResponse = await checarSeTokenAindaTemValidade(token);
+    const booleanResponse = await checarSeTokenAindaTemValidade(tokenJWT);
 
     if(booleanResponse) {
-        cronometro = setTimeout(checarLogin, 180000);
+
+        let timeReference = new Date().getTime();
+        let tokenParseado = parseJWT(tokenJWT);
+        let expDoToken = tokenParseado.exp;
+
+        cronometro = setTimeout(checarLogin, ((expDoToken * 1000) - timeReference));
         alertarQueLoginExpirou();
         forcarLogout();
 
@@ -26,6 +32,7 @@ async function checarLogin() {
         sticknotesDiv.style.display = "block";
         carregarDadosLembretes();
     } else{
+
         loginDiv.style.display = "block";
         sticknotesDiv.style.display = "none";
     }
@@ -35,10 +42,15 @@ async function checarLogin() {
 
 function forcarLogout() {
 
-    setTimeout(() => {
-            let token = localStorage.getItem("tokenJWT"); 
-            fazerServidorRevogarToken(token);
-    }, 179999);
+    let tokenJWT = localStorage.getItem("tokenJWT");
+    console.log("Estou na funcao forcarLogout");
+    let timeReference = new Date().getTime();
+    let tokenParseado = parseJWT(tokenJWT);
+    let expDoToken = tokenParseado.exp;
+
+    setTimeout( () => {        
+        fazerServidorRevogarToken(tokenJWT);
+    }, (((expDoToken * 1000) - timeReference)) - 10000);
 
 }
 
@@ -62,8 +74,7 @@ async function fazerServidorRevogarToken(token) {
         }
     }
 
-    let serverResponse = await fetch(urlBase + "/usuarios/logout", opcoes);
-    let obj = serverResponse.json();
+    await fetch(urlBase + "/usuarios/logout", opcoes);
 
     localStorage.clear();
 
@@ -74,9 +85,16 @@ async function fazerServidorRevogarToken(token) {
 
 function alertarQueLoginExpirou() {
 
+    let tokenJWT = localStorage.getItem("tokenJWT");
+
+    let timeReference = new Date().getTime();
+    let tokenParseado = parseJWT(tokenJWT);
+    let expDoToken = tokenParseado.exp;
+
+
     setTimeout( () => {
         alert("Seu tempo de login expirou!");
-    }, 179999);
+    }, ((expDoToken * 1000) - timeReference) - 10000);
 
 }
 
@@ -155,15 +173,17 @@ async function logar(e) {
 
     let resposta = await fetch(urlBase + "/usuario/login", options);
     let valorToken = await resposta.json();
-    console.log(parseJWT(valorToken.token));
-    console.log(valorToken);
 
     if (valorToken.token) {
+
         localStorage.setItem("tokenJWT", valorToken.token);
         verificarSeEstaLogado();
         checarLogin();
+
     } else {
+
         alert(JSON.stringify(valorToken.msg));
+
     }
 
 }
@@ -192,10 +212,14 @@ async function cadastrar(e) {
     let valorToken = await resposta.json();
 
     if (valorToken.key === "token") {
+
         localStorage.setItem("tokenJWT", JSON.stringify(valorToken));
         alert("Cadastro realizado com sucesso! Por favor, agora realize o Login");
+
     } else {
+
         alert(JSON.stringify(valorToken.msg));
+
     }
     
 }
@@ -222,9 +246,11 @@ async function renovarToken() {
 
     clearTimeout(cronometro);
 
-    cronometro = setTimeout(checarLogin, 180000);
-    
-    alertarQueLoginExpirou();
+    let timeReference = new Date().getTime();
+    let tokenParseado = parseJWT(tokenJWT);
+    let expDoToken = tokenParseado.exp;
+
+    cronometro = setTimeout(checarLogin, (expDoToken * 1000) - timeReference);
 
 }
 
@@ -248,13 +274,9 @@ async function verificarSeEstaLogado() {
 }
 
 
-
-
 //Funções que tratam da parte dos Lembretes
 
 async function carregarDadosLembretes() {
-
-    /* let moldeTextArea = `<textarea name="message" wrap="physical" cols="55" rows="5" onkeydown="textCounter(this.form.message,this.form.remLen,255);" onkeyup="textCounter(this.form.message,this.form.remLen,255);"></textarea>` */
 
     const tokenJWT = localStorage.getItem("tokenJWT");
 
@@ -266,11 +288,12 @@ async function carregarDadosLembretes() {
     }
 
     const resposta = await fetch(urlBase + "/lembrete", options);
+
     const listaDeLembretes = await resposta.json();
 
     let divPai = document.querySelector(".container-lembretes");
 
-    console.log(listaDeLembretes);
+    divPai.innerHTML = "";
 
     for (lembrete of listaDeLembretes) {
 
@@ -282,14 +305,9 @@ async function carregarDadosLembretes() {
 
         let texAreaDoLembrete = document.createElement("textarea");
 
-        //coloquei as 3 linhas abaixo
         texAreaDoLembrete.setAttribute('cols', 90);
         texAreaDoLembrete.setAttribute('rows', 5);
         texAreaDoLembrete.setAttribute('disabled', true);
-        
-        //Errado, não?
-        //conteudoLembrete.innerHTML = moldeTextArea;
-        //conteudoLembrete.setAttribute('disabled', true);
         texAreaDoLembrete.innerText = lembrete.texto;
         
         let botaoAlterarLembrete = document.createElement("button");
@@ -324,8 +342,6 @@ async function salvarLembrete(e) {
     let textArea = botaoSalvarLembrete.parentElement.children[0];
     let valueTextArea = textArea.value;
     let tamanhoDaStringDoTextArea = valueTextArea.length;
-    console.log(tamanhoDaStringDoTextArea);
-    //console.log(valueTextArea);
 
     if (tamanhoDaStringDoTextArea > 0 && tamanhoDaStringDoTextArea <= 255) {
 
@@ -341,9 +357,7 @@ async function salvarLembrete(e) {
         }
     
         let resposta = await fetch(urlBase + "/lembrete", options);
-        //console.log(resposta.ok);
         let lembrete = await resposta.json();
-        //console.log(lembrete);
     
         let divPai = document.querySelector(".container-lembretes");
     
@@ -357,9 +371,7 @@ async function salvarLembrete(e) {
         textAreaDoLembrete.setAttribute('disabled', true);
         textAreaDoLembrete.setAttribute('cols', 90);
         textAreaDoLembrete.setAttribute('rows', 5);
-        //linha abaixo alterada para correção
         textAreaDoLembrete.innerHTML = lembrete.texto;
-        console.log(textAreaDoLembrete);
     
         let botaoAlterarLembrete = document.createElement("button");
         botaoAlterarLembrete.innerText = "Editar";
@@ -384,7 +396,9 @@ async function salvarLembrete(e) {
     }
 
     else {
+
         alert("Erro. Não é permitido salvar um lembrete vazio, nem um lembrete com mais de 255 caracteres.");
+
     }
 
 }
@@ -411,6 +425,8 @@ async function editarLembrete(e) {
     let textoDoLembreteASerEditado = botaoEditarLembrete.previousElementSibling.previousElementSibling;
     textoDoLembreteASerEditado.removeAttribute("disabled");
 
+    renovarToken();
+
 }
 
 
@@ -423,24 +439,34 @@ async function salvarEdicaoDoLembrete(e) {
     let botaoSalvarEdicao = e.target;
     let idAlvo = botaoSalvarEdicao.getAttribute("id");
     let novoValorTextArea = botaoSalvarEdicao.parentElement.children[1].value;
+    let tamanhoDaStringDoTextArea = novoValorTextArea.length;
 
-    let options = {
-        method: "PUT",
-        body: JSON.stringify({
-            texto: novoValorTextArea
+    if (tamanhoDaStringDoTextArea > 0 && tamanhoDaStringDoTextArea <= 255) {
 
-        }),
-        headers: {
-            "Authorization": `Bearer ${tokenJWT}`
-        }
-    }
+        let options = {
+            method: "PUT",
+            body: JSON.stringify({
+                texto: novoValorTextArea
     
-    const respServer = await fetch(`${urlBase}/lembrete/${idAlvo}`, options);
-    const respJson = await respServer.json();
+            }),
+            headers: {
+                "Authorization": `Bearer ${tokenJWT}`
+            }
+        }
+        
+        const respServer = await fetch(`${urlBase}/lembrete/${idAlvo}`, options);
+        const respJson = await respServer.json();
+    
+        botaoSalvarEdicao.previousElementSibling.setAttribute("disabled", true);
+    
+        botaoSalvarEdicao.remove();
+    }
 
-    botaoSalvarEdicao.previousElementSibling.setAttribute("disabled", true);
+    else {
 
-    botaoSalvarEdicao.remove();
+        alert("Erro. Não é permitido salvar um lembrete vazio, nem um lembrete com mais de 255 caracteres.");
+
+    }
 
 }
 
@@ -471,16 +497,6 @@ async function removerLembrete(e) {
 
 }
 
-
-/* function textCounter(field, countfield, maxlimit) {
-
-    if (field.value.length > maxlimit)
-    field.value = field.value.substring(0, maxlimit);
-    else 
-    countfield.value = maxlimit - field.value.length;
-    
-} */
-
 checarLogin();
 
 const botaoLogin = document.querySelector("#fazerLogin");
@@ -494,19 +510,3 @@ botaoSalvarNovoLembreve.addEventListener("click", salvarLembrete);
 
 const botaoFazerLogout = document.querySelector("#fazerLogout");
 botaoFazerLogout.addEventListener("click", fazerLogout);
-
-
-/*    
-const tokenJWT = localStorage.getItem("tokenJWT");
-
-    let options = {
-        method: "POST",
-        body: JSON.stringify({
-            login: valorEmailPessoa,
-            senha: valorSenhaPessoa
-        }),
-        headers: {
-            "Content-type": "application/json",
-            "Authorization": `Bearer ${tokenJWT}`
-        }
-    }*/

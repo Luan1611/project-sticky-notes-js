@@ -20,7 +20,7 @@ async function checarLogin() {
     if(booleanResponse) {
         cronometro = setTimeout(checarLogin, 180000);
         alertarQueLoginExpirou();
-        fazerLogout();
+        forcarLogout();
 
         loginDiv.style.display = "none";
         sticknotesDiv.style.display = "block";
@@ -33,7 +33,7 @@ async function checarLogin() {
 }
 
 
-function fazerLogout() {
+function forcarLogout() {
 
     setTimeout(() => {
             let token = localStorage.getItem("tokenJWT"); 
@@ -43,8 +43,18 @@ function fazerLogout() {
 }
 
 
+function fazerLogout(e) {
+
+    e.preventDefault();
+
+    let token = localStorage.getItem("tokenJWT"); 
+    fazerServidorRevogarToken(token);
+
+}
+
+
 async function fazerServidorRevogarToken(token) {
-    
+
     let opcoes = {
         method: "GET",
         headers: {
@@ -55,9 +65,9 @@ async function fazerServidorRevogarToken(token) {
     let serverResponse = await fetch(urlBase + "/usuarios/logout", opcoes);
     let obj = serverResponse.json();
 
-    console.log(obj.msg);
-
     localStorage.clear();
+
+    checarLogin();
 
 }
 
@@ -72,6 +82,7 @@ function alertarQueLoginExpirou() {
 
 
 function parseJWT(token) {
+
     var base64Url = token.split('.')[1];
     var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
@@ -79,6 +90,7 @@ function parseJWT(token) {
     }).join(''));
 
     return JSON.parse(jsonPayload);
+
 }
 
 
@@ -241,6 +253,8 @@ async function verificarSeEstaLogado() {
 
 async function carregarDadosLembretes() {
 
+    let moldeTextArea = `<textarea name="message" wrap="physical" cols="55" rows="5" onkeydown="textCounter(this.form.message,this.form.remLen,255);" onkeyup="textCounter(this.form.message,this.form.remLen,255);"></textarea>`
+
     const tokenJWT = localStorage.getItem("tokenJWT");
 
     let options = {
@@ -265,8 +279,11 @@ async function carregarDadosLembretes() {
         let dataLembrete = document.createElement("h4");
         dataLembrete.innerHTML = lembrete.data;
 
-        let conteudoLembrete = document.createElement("p");
-        conteudoLembrete.innerHTML = lembrete.texto;
+        let conteudoLembrete = document.createElement("textarea");
+        conteudoLembrete.innerHTML = moldeTextArea;
+        conteudoLembrete.setAttribute('disabled', true);
+        conteudoLembrete.innerText = lembrete.texto;
+        
 
         let botaoAlterarLembrete = document.createElement("button");
         botaoAlterarLembrete.innerText = "Editar";
@@ -299,12 +316,13 @@ async function salvarLembrete(e) {
     e.preventDefault();
 
     let botaoSalvarLembrete = e.target;
-    let valorTextArea = botaoSalvarLembrete.parentElement.children[0].value;
+    let textArea = botaoSalvarLembrete.parentElement.children[0];
+    let valueTextArea = textArea.value;
 
     let options = {
         method: "POST",
         body: JSON.stringify({
-            texto: valorTextArea
+            texto: valueTextArea
         }),
         headers: {
             "Content-type": "application/json",
@@ -323,8 +341,12 @@ async function salvarLembrete(e) {
     let dataLembrete = document.createElement("h4");
     dataLembrete.innerHTML = lembrete.data;
 
-    let conteudoLembrete = document.createElement("p");
-    conteudoLembrete.innerHTML = lembrete.texto;
+/*     let conteudoLembrete = document.createElement("p");
+    conteudoLembrete.innerHTML = lembrete.texto; */
+
+    let conteudoLembrete = document.createElement("textarea");
+    conteudoLembrete = textArea;
+    conteudoLembrete.setAttribute('disabled', true);
 
     let botaoAlterarLembrete = document.createElement("button");
     botaoAlterarLembrete.innerText = "Editar";
@@ -347,17 +369,59 @@ async function salvarLembrete(e) {
 
 
 //TODO: Terminar função de editar um lembrete
-function editarLembrete() {
+async function editarLembrete(e) {
+
+    let botaoEditarLembrete = e.target;
+
+    if (!(botaoEditarLembrete.previousElementSibling.getAttribute("class") === "salvarEdicao")) {
+
+        let botaoSalvarEdicao = document.createElement("button");
+        botaoSalvarEdicao.innerText = "Salvar Alterações";
+        botaoSalvarEdicao.setAttribute("class", "salvarEdicao");
+        botaoSalvarEdicao.setAttribute("id", botaoEditarLembrete.getAttribute("id"));
+        botaoEditarLembrete.insertAdjacentElement("beforebegin", botaoSalvarEdicao);
+        botaoSalvarEdicao.addEventListener("click", provisoria);
+
+    }
+
+    const token = localStorage.getItem("tokenJWT");
+
+    let idLembrete = botaoEditarLembrete.id;
+    let textoDoLembreteASerEditado = botaoEditarLembrete.previousElementSibling.previousElementSibling;
+    textoDoLembreteASerEditado.removeAttribute("disabled");
+    
+
+
+}
+
+async function provisoria(e) {
+
+    e.preventDefault();
 
     const tokenJWT = localStorage.getItem("tokenJWT");
 
+    let botaoSalvarEdicao = e.target;
+    let idAlvo = botaoSalvarEdicao.getAttribute("id");
+    let novoValorTextArea = botaoSalvarEdicao.parentElement.children[1].value;
+
     let options = {
-        method: "GET",
+        method: "PUT",
+        body: JSON.stringify({
+            texto: novoValorTextArea
+
+        }),
         headers: {
             "Authorization": `Bearer ${tokenJWT}`
         }
     }
-    console.log("editar")
+    
+    const respServer = await fetch(`${urlBase}/lembrete/${idAlvo}`, options);
+    const respJson = await respServer.json();
+
+    botaoSalvarEdicao.previousElementSibling.setAttribute("disabled", true);
+
+    botaoSalvarEdicao.remove();
+
 }
 
 
@@ -410,7 +474,7 @@ const inputAdicionarLembrete = document.querySelector("#inputLembrete");
 inputAdicionarLembrete.addEventListener("click", salvarLembrete);
 
 const botaoFazerLogout = document.querySelector("#fazerLogout");
-botaoFazerLogout.addEventListener("click", fazerServidorRevogarToken);
+botaoFazerLogout.addEventListener("click", fazerLogout);
 
 
 /*    
